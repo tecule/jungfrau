@@ -773,7 +773,9 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 				return floatingIpRange;
 			}
 
-			// // prefix == 24
+			/*
+			 * prefix == 24
+			 */
 			// String cidr = subnet.getCidr();
 			// int prefix = Integer.parseInt(cidr.substring(cidr.indexOf('/') + 1));
 			// if (24 != prefix) {
@@ -788,45 +790,71 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 			}
 
 			for (Pool pool : pools) {
-				/*
-				 * each allocation pool must be defined in one C class net.
-				 */
 				String startIpAddress = pool.getStart();
 				String endIpAddress = pool.getEnd();
 
-				// int CClassIpLength = 24;
-				int lastDotPosition = startIpAddress.lastIndexOf('.');
-				String startIpAddressCPrefix = startIpAddress.substring(0, lastDotPosition);
+				/*
+				 * check if each allocation pool is a C class.
+				 */
+				// int lastDotPosition = startIpAddress.lastIndexOf('.');
+				// String startIpAddressCPrefix = startIpAddress.substring(0, lastDotPosition);
+				// lastDotPosition = endIpAddress.lastIndexOf('.');
+				// String endIpAddressCPrefix = endIpAddress.substring(0, lastDotPosition);
+				// if (false == startIpAddressCPrefix.equalsIgnoreCase(endIpAddressCPrefix)) {
+				// logger.error("获取浮动IP地址范围出错，外部网络所属的子网地址池不是C类网段，该子网被忽略。");
+				//
+				// continue;
+				// }
+				/*
+				 * prefix of the start and end is the same, use any one.
+				 */
+				// String addressPrefix = startIpAddressCPrefix;
+				// int start = Integer.parseInt((startIpAddress.substring(lastDotPosition + 1)));
+				// int end = Integer.parseInt((endIpAddress.substring(lastDotPosition + 1)));
+				// for (int i = start; i <= end; i++) {
+				// floatingIpRange.add(addressPrefix + "." + i);
+				// }
 
-				lastDotPosition = endIpAddress.lastIndexOf('.');
-				String endIpAddressCPrefix = endIpAddress.substring(0, lastDotPosition);
-
-				// String startIpAddressCPrefix = startIpAddress.substring(0, CClassIpLength);
-				// String endIpAddressCPrefix = endIpAddress.substring(0, CClassIpLength);
-				if (false == startIpAddressCPrefix.equalsIgnoreCase(endIpAddressCPrefix)) {
-					logger.error("获取浮动IP地址范围出错，外部网络所属的子网地址池不是C类网段，该子网被忽略。");
+				/*
+				 * check if each allocation pool is a B class.
+				 */
+				// escape dot in regular expression
+				String[] startIpAddressParts = startIpAddress.split("\\.");
+				String[] endIpAddressParts = endIpAddress.split("\\.");
+				if ((false == startIpAddressParts[0].equalsIgnoreCase(endIpAddressParts[0]))
+						|| (false == startIpAddressParts[1].equalsIgnoreCase(endIpAddressParts[1]))) {
+					logger.error("获取浮动IP地址范围出错，外部网络所属的子网地址池不是B类网段，该子网被忽略。");
 
 					continue;
 				}
 
-				// prefix of the start and end is the same, use any one.
-				String addressPrefix = startIpAddressCPrefix;
-				int start = Integer.parseInt((startIpAddress.substring(lastDotPosition + 1)));
-				int end = Integer.parseInt((endIpAddress.substring(lastDotPosition + 1)));
-				for (int i = start; i <= end; i++) {
-					floatingIpRange.add(addressPrefix + "." + i);
+				int ip1 = Integer.parseInt(startIpAddressParts[0]);
+				int ip2 = Integer.parseInt(startIpAddressParts[1]);
+				int ipStart3 = Integer.parseInt(startIpAddressParts[2]);
+				int ipStart4 = Integer.parseInt(startIpAddressParts[3]);
+				int ipEnd3 = Integer.parseInt(endIpAddressParts[2]);
+				int ipEnd4 = Integer.parseInt(endIpAddressParts[3]);
+				for (int ip3 = ipStart3; ip3 <= ipEnd3; ip3++) {
+					int ipStartTmp4, ipEndTmp4;
+
+					if (ip3 == ipStart3) {
+						ipStartTmp4 = ipStart4;
+					} else {
+						ipStartTmp4 = 1;
+					}
+					if (ip3 == ipEnd3) {
+						ipEndTmp4 = ipEnd4;
+					} else {
+						ipEndTmp4 = 255;
+					}
+
+					for (int ip4 = ipStartTmp4; ip4 <= ipEndTmp4; ip4++) {
+						String ip = Integer.toString(ip1) + "." + Integer.toString(ip2) + "." + Integer.toString(ip3)
+								+ "." + Integer.toString(ip4);
+						floatingIpRange.add(ip);
+					}
 				}
 			}
-
-			// // TODO assert all allocation pools have the same prefix
-			// String ipSegment = pools.get(0).getStart().substring(0, pools.get(0).getStart().lastIndexOf('.'));
-			// for (Pool p : pools) {
-			// int start = Integer.parseInt(p.getStart().substring(p.getStart().lastIndexOf('.') + 1));
-			// int end = Integer.parseInt(p.getEnd().substring(p.getEnd().lastIndexOf('.') + 1));
-			// for (int i = start; i <= end; i++) {
-			// floatingIpRange.add(ipSegment + "." + i);
-			// }
-			// }
 
 			return floatingIpRange;
 		} catch (NumberFormatException e) {

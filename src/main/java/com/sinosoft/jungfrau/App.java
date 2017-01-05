@@ -102,11 +102,12 @@ public class App {
 //		String projectId = cloud.createProject("project-v2", "v2", 1, 1, 1);
 //		System.out.println(projectId);
 		
-		cloud.updateComputeServiceQuota(2, 2, 2);
+//		cloud.updateComputeServiceQuota(2, 2, 2);
 		
 //		Absolute absolute = cloud.getBlockStorageQuotaUsage();
 //		System.out.println(absolute.getTotalGigabytesUsed());
 
+		cloud.getExternalIps();
 		System.out.println("finished");
 	}
 
