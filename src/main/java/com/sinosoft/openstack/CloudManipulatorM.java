@@ -51,7 +51,7 @@ import com.sinosoft.openstack.type.telemetry.ServerSamples;
 
 public abstract class CloudManipulatorM implements CloudManipulator {
 	private static Logger logger = LoggerFactory.getLogger(CloudManipulatorM.class);
-	
+
 	/*
 	 * projectId is initialized in the subclass.
 	 */
@@ -75,8 +75,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	protected OSClientV3 projectClientM3;
 
 	@Override
-	public abstract String createProject(String projectName, String projectDescription, int instanceQuota, int cpuQuota,
-			int memoryQuota);
+	public abstract String createProject(String projectName, String projectDescription, int instanceQuota,
+			int cpuQuota, int memoryQuota);
 
 	@Override
 	public abstract QuotaSet updateComputeServiceQuota(int instanceQuota, int cpuQuota, int memoryQuota);
@@ -180,13 +180,18 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	}
 
 	@Override
-	public boolean waitVolumeStatus(String volumeId, List<Volume.Status> statusList, int minute)
+	public boolean waitVolumeStatus(String volumeId, List<Volume.Status> statusList, int waitSeconds)
 			throws InterruptedException {
-		int sleepInterval = 6000;
-		int sleepCount = minute * 60 * 1000 / sleepInterval;
+		int sleepSeconds = 10;
+		int sleepCount = waitSeconds / sleepSeconds;
+		if (sleepCount <= 0) {
+			sleepCount = 1;
+		}
 
 		int loop = 0;
 		while (loop < sleepCount) {
+			Thread.sleep(sleepSeconds * 1000);
+
 			Volume volume = getVolume(volumeId);
 			if (null == volume) {
 				return false;
@@ -200,7 +205,6 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 				}
 			}
 
-			Thread.sleep(sleepInterval);
 			loop++;
 		}
 
@@ -208,18 +212,22 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	}
 
 	@Override
-	public boolean waitVolumeDeleted(String volumeId, int minute) throws InterruptedException {
-		int sleepInterval = 6000;
-		int sleepCount = minute * 60 * 1000 / sleepInterval;
+	public boolean waitVolumeDeleted(String volumeId, int waitSeconds) throws InterruptedException {
+		int sleepSeconds = 10;
+		int sleepCount = waitSeconds / sleepSeconds;
+		if (sleepCount <= 0) {
+			sleepCount = 1;
+		}
 
 		int loop = 0;
 		while (loop < sleepCount) {
+			Thread.sleep(sleepSeconds * 1000);
+
 			Volume volume = getVolume(volumeId);
 			if (null == volume) {
 				return true;
 			}
 
-			Thread.sleep(sleepInterval);
 			loop++;
 		}
 
@@ -247,13 +255,18 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	}
 
 	@Override
-	public boolean waitImageStatus(String imageId, org.openstack4j.model.image.Image.Status status, int minute)
+	public boolean waitImageStatus(String imageId, org.openstack4j.model.image.Image.Status status, int waitSeconds)
 			throws InterruptedException {
-		int sleepInterval = 6000;
-		int sleepCount = minute * 60 * 1000 / sleepInterval;
+		int sleepSeconds = 10;
+		int sleepCount = waitSeconds / sleepSeconds;
+		if (sleepCount <= 0) {
+			sleepCount = 1;
+		}
 
 		int loop = 0;
 		while (loop < sleepCount) {
+			Thread.sleep(sleepSeconds * 1000);
+
 			Image image = getImage(imageId);
 			if (null == image) {
 				return false;
@@ -265,13 +278,12 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 				}
 			}
 
-			Thread.sleep(sleepInterval);
 			loop++;
 		}
 
 		return false;
 	}
-	
+
 	// @Override
 	// public boolean waitImageDeleted(String imageId, int minute) throws InterruptedException {
 	// int sleepInterval = 6000;
@@ -290,7 +302,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	//
 	// return false;
 	// }
-	
+
 	@Override
 	public abstract Image updateImage(String imageId, String imageName, boolean publicity);
 
@@ -328,7 +340,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 			throw new CloudException("获取虚拟机实例列表发生错误。", e);
 		}
 	}
-	
+
 	@Override
 	public Flavor getFlavor(int cpu, int memory, int disk) {
 		try {
@@ -377,12 +389,18 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	}
 
 	@Override
-	public boolean waitServerStatus(String serverId, List<Server.Status> statusList, int minute) throws InterruptedException {
-		int sleepInterval = 6000;
-		int sleepCount = minute * 60 * 1000 / sleepInterval;
+	public boolean waitServerStatus(String serverId, List<Server.Status> statusList, int waitSeconds)
+			throws InterruptedException {
+		int sleepSeconds = 10;
+		int sleepCount = waitSeconds / sleepSeconds;
+		if (sleepCount <= 0) {
+			sleepCount = 1;
+		}
 
 		int loop = 0;
 		while (loop < sleepCount) {
+			Thread.sleep(sleepSeconds * 1000);
+
 			Server server = getServer(serverId);
 			if (null == server) {
 				return false;
@@ -396,7 +414,6 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 				}
 			}
 
-			Thread.sleep(sleepInterval);
 			loop++;
 		}
 
@@ -404,18 +421,22 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	}
 
 	@Override
-	public boolean waitServerDeleted(String serverId, int minute) throws InterruptedException {
-		int sleepInterval = 6000;
-		int sleepCount = minute * 60 * 1000 / sleepInterval;
+	public boolean waitServerDeleted(String serverId, int waitSeconds) throws InterruptedException {
+		int sleepSeconds = 10;
+		int sleepCount = waitSeconds / sleepSeconds;
+		if (sleepCount <= 0) {
+			sleepCount = 1;
+		}
 
 		int loop = 0;
 		while (loop < sleepCount) {
+			Thread.sleep(sleepSeconds * 1000);
+
 			Server server = getServer(serverId);
 			if (null == server) {
 				return true;
 			}
 
-			Thread.sleep(sleepInterval);
 			loop++;
 		}
 
@@ -555,15 +576,15 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	@Override
 	public boolean liveMigrate(String serverId, String hypervisorName) {
 		try {
-//			// kilo use host name in live migration
-//			String host = hypervisorName;
-//			int fqdnDotPosition = hypervisorName.indexOf('.');
-//			if (fqdnDotPosition >= 0) {
-//				host = hypervisorName.substring(0, fqdnDotPosition);
-//			}
-//			ActionResponse response = projectClientM2.compute().servers().liveMigrate(serverId,
-//					LiveMigrateOptions.create().host(host));
-			
+			// // kilo use host name in live migration
+			// String host = hypervisorName;
+			// int fqdnDotPosition = hypervisorName.indexOf('.');
+			// if (fqdnDotPosition >= 0) {
+			// host = hypervisorName.substring(0, fqdnDotPosition);
+			// }
+			// ActionResponse response = projectClientM2.compute().servers().liveMigrate(serverId,
+			// LiveMigrateOptions.create().host(host));
+
 			// mitaka use FQDN in live migration
 			ActionResponse response = projectClient.compute().servers()
 					.liveMigrate(serverId, LiveMigrateOptions.create().host(hypervisorName));
@@ -577,7 +598,6 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 			throw new CloudException("迁移虚拟机实例发生错误。", e);
 		}
 	}
-
 
 	@Override
 	public ServerInfo getServerInfo(String serverId) {
@@ -619,7 +639,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 		info.setPhysicalMachine(physicalMachine);
 		return info;
 	}
-	
+
 	/**
 	 * get resource id by server and meter.
 	 * 
@@ -666,7 +686,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 
 		return resourceId;
 	}
-	
+
 	@Override
 	public abstract String createAlarm(String serverId, String alarmName, String meterName, float threshold);
 
@@ -678,7 +698,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 
 	@Override
 	public abstract String getAlarmState(String alarmId);
-	
+
 	private String convertUtcToLocal(String sampleTimestamp) throws ParseException {
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -688,11 +708,11 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 
 		return localFormat;
 	}
-	
+
 	@Override
 	public ServerSamples getSamples(String serverId, String meterName, long timestamp) {
 		ServerSamples serverSamples = new ServerSamples();
-		
+
 		/*
 		 * initialize result
 		 */
@@ -710,7 +730,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 		try {
 			SampleCriteria criteria = new SampleCriteria().resource(resourceId).timestamp(SampleCriteria.Oper.GT,
 					timestamp);
-			List<? extends MeterSample> meterSamples = projectClientM3.telemetry().meters().samples(meterName, criteria);
+			List<? extends MeterSample> meterSamples = projectClientM3.telemetry().meters()
+					.samples(meterName, criteria);
 			/*
 			 * invert result order
 			 */
@@ -718,7 +739,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 				MeterSample sample = meterSamples.get(index);
 				timeSeries.add(convertUtcToLocal(sample.getTimestamp()));
 				samples.add(sample.getCounterVolume());
-			}	
+			}
 
 			serverSamples.setTimeSeries(timeSeries);
 			serverSamples.setSamples(samples);
@@ -951,5 +972,5 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 		result.setMessage(message);
 		return result;
 	}
-	
+
 }
