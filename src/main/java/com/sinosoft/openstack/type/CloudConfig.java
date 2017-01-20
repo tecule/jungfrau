@@ -13,6 +13,7 @@ public class CloudConfig {
 	private String adminProjectId;
 	private String adminRoleName;
 	private String aodhServiceUrl;
+	private int alarmThresholdRulePeriod;
 
 	public String getCloudManipulatorVersion() {
 		return cloudManipulatorVersion;
@@ -108,5 +109,13 @@ public class CloudConfig {
 
 	public void setAodhServiceUrl(String aodhServiceUrl) {
 		this.aodhServiceUrl = aodhServiceUrl;
+	}
+
+	public int getAlarmThresholdRulePeriod() {
+		return alarmThresholdRulePeriod;
+	}
+
+	public void setAlarmThresholdRulePeriod(int alarmThresholdRulePeriod) {
+		this.alarmThresholdRulePeriod = alarmThresholdRulePeriod;
 	}
 }

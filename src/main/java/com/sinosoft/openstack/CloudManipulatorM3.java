@@ -54,8 +54,11 @@ public class CloudManipulatorM3 extends CloudManipulatorM {
 	private String OS_PASSWORD;
 	private String OS_ROLE_NAME;
 	private String AODH_SERVICE_URL;
+	private int ALARM_THRESHOLD_RULE_PERIOD;
 
 	public CloudManipulatorM3(CloudConfig appConfig, String projectId) {
+		// TODO check if appConfig has valid data
+		
 		OS_AUTH_URL = appConfig.getAuthUrl();
 		OS_USER_DOMAIN_NAME = appConfig.getDomainName();
 		OS_USER_DOMAIN_ID = appConfig.getDomainId();
@@ -66,11 +69,13 @@ public class CloudManipulatorM3 extends CloudManipulatorM {
 		AODH_SERVICE_URL = appConfig.getAodhServiceUrl();
 		PUBLIC_NETWORK_ID = appConfig.getPublicNetworkId();
 
+		ALARM_THRESHOLD_RULE_PERIOD = appConfig.getAlarmThresholdRulePeriod();
+
 		this.projectId = projectId;
 		try {
 			projectClientM3 = OSFactory.builderV3().endpoint(OS_AUTH_URL)
 					.credentials(OS_USERNAME, OS_PASSWORD, Identifier.byName(OS_USER_DOMAIN_NAME))
-					.scopeToProject(Identifier.byId(projectId)).authenticate();			
+					.scopeToProject(Identifier.byId(projectId)).authenticate();
 
 			projectClient = projectClientM3;
 		} catch (AuthenticationException e) {
@@ -90,11 +95,8 @@ public class CloudManipulatorM3 extends CloudManipulatorM {
 					.scopeToDomain(Identifier.byId(OS_USER_DOMAIN_ID)).authenticate();
 
 			// create tenant
-			Project project = domainClient
-					.identity()
-					.projects()
-					.create(Builders.project().name(projectName + "_" + UUID.randomUUID().toString())
-							.description(projectDescription).build());
+			Project project = domainClient.identity().projects().create(Builders.project()
+					.name(projectName + "_" + UUID.randomUUID().toString()).description(projectDescription).build());
 			projectId = project.getId();
 
 			// rename
@@ -112,8 +114,8 @@ public class CloudManipulatorM3 extends CloudManipulatorM {
 				throw new CloudException("获取角色发生错误。");
 			}
 			Role adminRole = roles.get(0);
-			ActionResponse response = domainClient.identity().roles()
-					.grantProjectUserRole(projectId, adminUser.getId(), adminRole.getId());
+			ActionResponse response = domainClient.identity().roles().grantProjectUserRole(projectId, adminUser.getId(),
+					adminRole.getId());
 			if (false == response.isSuccess()) {
 				logger.error("设置角色发生错误。" + response.getFault());
 				throw new CloudException("设置角色发生错误。");
@@ -125,57 +127,33 @@ public class CloudManipulatorM3 extends CloudManipulatorM {
 					.scopeToProject(Identifier.byId(projectId)).authenticate();
 
 			// set quota
-			newProjectClient
-					.compute()
-					.quotaSets()
-					.updateForTenant(
-							projectId,
-							Builders.quotaSet().instances(instanceQuota).cores(cpuQuota).ram(memoryQuota * 1024)
-									.build());
+			newProjectClient.compute().quotaSets().updateForTenant(projectId,
+					Builders.quotaSet().instances(instanceQuota).cores(cpuQuota).ram(memoryQuota * 1024).build());
 
 			// build network and router
-			Network network = newProjectClient
-					.networking()
-					.network()
-					.create(Builders.network().name("private" + "_" + projectId.substring(0, 8)).tenantId(projectId)
-							.adminStateUp(true).build());
+			Network network = newProjectClient.networking().network().create(Builders.network()
+					.name("private" + "_" + projectId.substring(0, 8)).tenantId(projectId).adminStateUp(true).build());
 			// .addDNSNameServer("114.114.114.114")
-			Subnet subnet = newProjectClient
-					.networking()
-					.subnet()
+			Subnet subnet = newProjectClient.networking().subnet()
 					.create(Builders.subnet().name("private_subnet" + "_" + projectId.substring(0, 8))
 							.networkId(network.getId()).tenantId(projectId).ipVersion(IPVersionType.V4)
 							.cidr("192.168.32.0/24").gateway("192.168.32.1").enableDHCP(true).build());
-			Router router = newProjectClient
-					.networking()
-					.router()
+			Router router = newProjectClient.networking().router()
 					.create(Builders.router().name("router" + "_" + projectId.substring(0, 8)).adminStateUp(true)
 							.externalGateway(PUBLIC_NETWORK_ID).tenantId(projectId).build());
 			@SuppressWarnings("unused")
-			RouterInterface iface = newProjectClient.networking().router()
-					.attachInterface(router.getId(), AttachInterfaceType.SUBNET, subnet.getId());
+			RouterInterface iface = newProjectClient.networking().router().attachInterface(router.getId(),
+					AttachInterfaceType.SUBNET, subnet.getId());
 
 			// add security group rule
 			List<? extends SecGroupExtension> secGroups = newProjectClient.compute().securityGroups().list();
 			for (SecGroupExtension secGroup : secGroups) {
-				newProjectClient
-						.compute()
-						.securityGroups()
-						.createRule(
-								Builders.secGroupRule().cidr("0.0.0.0/0").parentGroupId(secGroup.getId())
-										.protocol(IPProtocol.ICMP).range(-1, -1).build());
-				newProjectClient
-						.compute()
-						.securityGroups()
-						.createRule(
-								Builders.secGroupRule().cidr("0.0.0.0/0").parentGroupId(secGroup.getId())
-										.protocol(IPProtocol.TCP).range(1, 65535).build());
-				newProjectClient
-						.compute()
-						.securityGroups()
-						.createRule(
-								Builders.secGroupRule().cidr("0.0.0.0/0").parentGroupId(secGroup.getId())
-										.protocol(IPProtocol.UDP).range(1, 65535).build());
+				newProjectClient.compute().securityGroups().createRule(Builders.secGroupRule().cidr("0.0.0.0/0")
+						.parentGroupId(secGroup.getId()).protocol(IPProtocol.ICMP).range(-1, -1).build());
+				newProjectClient.compute().securityGroups().createRule(Builders.secGroupRule().cidr("0.0.0.0/0")
+						.parentGroupId(secGroup.getId()).protocol(IPProtocol.TCP).range(1, 65535).build());
+				newProjectClient.compute().securityGroups().createRule(Builders.secGroupRule().cidr("0.0.0.0/0")
+						.parentGroupId(secGroup.getId()).protocol(IPProtocol.UDP).range(1, 65535).build());
 			}
 		} catch (Exception e) {
 			throw new CloudException("创建项目发生错误，项目ID：" + projectId + "。", e);
@@ -187,13 +165,8 @@ public class CloudManipulatorM3 extends CloudManipulatorM {
 	@Override
 	public QuotaSet updateComputeServiceQuota(int instanceQuota, int cpuQuota, int memoryQuota) {
 		try {
-			QuotaSet quota = projectClientM3
-					.compute()
-					.quotaSets()
-					.updateForTenant(
-							projectId,
-							Builders.quotaSet().cores(cpuQuota).instances(instanceQuota).ram(memoryQuota * 1024)
-									.build());
+			QuotaSet quota = projectClientM3.compute().quotaSets().updateForTenant(projectId,
+					Builders.quotaSet().cores(cpuQuota).instances(instanceQuota).ram(memoryQuota * 1024).build());
 
 			return quota;
 		} catch (Exception e) {
@@ -292,7 +265,7 @@ public class CloudManipulatorM3 extends CloudManipulatorM {
 		result.setMessage(message);
 		return result;
 	}
-	
+
 	@Override
 	public Image updateImage(String imageId, String imageName, boolean publicity) {
 		// TODO image name with chinese character not work in "PUT /v1/images/xxxxxx"
@@ -331,7 +304,7 @@ public class CloudManipulatorM3 extends CloudManipulatorM {
 		rule.setComparisonOperator("ge");
 		rule.setThreshold(threshold);
 		rule.setStatistic("avg");
-		rule.setPeriod(60);
+		rule.setPeriod(ALARM_THRESHOLD_RULE_PERIOD);
 		rule.setEvaluationPeriods(1);
 
 		Query query = new Query();

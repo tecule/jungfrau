@@ -43,18 +43,23 @@ public class CloudManipulatorM2 extends CloudManipulatorM {
 	private String OS_USERNAME;
 	private String OS_PASSWORD;
 	private String OS_TENANT_NAME;
+	private int ALARM_THRESHOLD_RULE_PERIOD;
 
 	public CloudManipulatorM2(CloudConfig appConfig, String projectId) {
+		// TODO check if appConfig has valid data
+		
 		OS_AUTH_URL = appConfig.getAuthUrl();
 		OS_USERNAME = appConfig.getAdminUsername();
 		OS_PASSWORD = appConfig.getAdminPassword();
 		OS_TENANT_NAME = appConfig.getAdminProjectName();
 		PUBLIC_NETWORK_ID = appConfig.getPublicNetworkId();
+		
+		ALARM_THRESHOLD_RULE_PERIOD = appConfig.getAlarmThresholdRulePeriod();
 
 		this.projectId = projectId;
 		projectClientM2 = OSFactory.builderV2().endpoint(OS_AUTH_URL).credentials(OS_USERNAME, OS_PASSWORD)
 				.tenantId(projectId).authenticate();
-		
+
 		projectClient = projectClientM2;
 	}
 
@@ -62,7 +67,7 @@ public class CloudManipulatorM2 extends CloudManipulatorM {
 	public String createProject(String projectName, String projectDescription, int instanceQuota, int cpuQuota,
 			int memoryQuota) {
 		String tenantId;
-		
+
 		try {
 			OSClientV2 client = OSFactory.builderV2().endpoint(OS_AUTH_URL).credentials(OS_USERNAME, OS_PASSWORD)
 					.tenantName(OS_TENANT_NAME).perspective(Facing.ADMIN).authenticate();
@@ -79,7 +84,8 @@ public class CloudManipulatorM2 extends CloudManipulatorM {
 			// set user permission
 			User adminUser = client.identity().users().getByName(OS_USERNAME);
 			Role adminRole = client.identity().roles().getByName("admin");
-			ActionResponse response = client.identity().roles().addUserRole(tenantId, adminUser.getId(), adminRole.getId());
+			ActionResponse response = client.identity().roles().addUserRole(tenantId, adminUser.getId(),
+					adminRole.getId());
 			if (false == response.isSuccess()) {
 				logger.error(response.getFault());
 			}
@@ -90,13 +96,13 @@ public class CloudManipulatorM2 extends CloudManipulatorM {
 			// .addDNSNameServer("124.16.136.254")
 			Subnet subnet = client.networking().subnet()
 					.create(Builders.subnet().name("private_subnet").networkId(network.getId()).tenantId(tenantId)
-							.ipVersion(IPVersionType.V4).cidr("192.168.32.0/24").gateway("192.168.32.1").enableDHCP(true)
-							.build());
+							.ipVersion(IPVersionType.V4).cidr("192.168.32.0/24").gateway("192.168.32.1")
+							.enableDHCP(true).build());
 			Router router = client.networking().router().create(Builders.router().name("router").adminStateUp(true)
 					.externalGateway(PUBLIC_NETWORK_ID).tenantId(tenantId).build());
 			@SuppressWarnings("unused")
-			RouterInterface iface = client.networking().router().attachInterface(router.getId(), AttachInterfaceType.SUBNET,
-					subnet.getId());
+			RouterInterface iface = client.networking().router().attachInterface(router.getId(),
+					AttachInterfaceType.SUBNET, subnet.getId());
 
 			// adjust security group
 			OSClientV2 tenantClient = OSFactory.builderV2().endpoint(OS_AUTH_URL).credentials(OS_USERNAME, OS_PASSWORD)
@@ -253,7 +259,7 @@ public class CloudManipulatorM2 extends CloudManipulatorM {
 		rule.setThreshold(threshold);
 		rule.setComparisonOperator(Alarm.ThresholdRule.ComparisonOperator.GE);
 		rule.setStatistic(Alarm.ThresholdRule.Statistic.AVG);
-		rule.setPeriod(60);
+		rule.setPeriod(ALARM_THRESHOLD_RULE_PERIOD);
 		rule.setEvaluationPeriods(1);
 		rule.setQuery(queries);
 

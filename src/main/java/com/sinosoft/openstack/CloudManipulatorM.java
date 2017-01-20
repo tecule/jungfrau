@@ -75,8 +75,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	protected OSClientV3 projectClientM3;
 
 	@Override
-	public abstract String createProject(String projectName, String projectDescription, int instanceQuota,
-			int cpuQuota, int memoryQuota);
+	public abstract String createProject(String projectName, String projectDescription, int instanceQuota, int cpuQuota,
+			int memoryQuota);
 
 	@Override
 	public abstract QuotaSet updateComputeServiceQuota(int instanceQuota, int cpuQuota, int memoryQuota);
@@ -95,8 +95,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	@Override
 	public BlockQuotaSet updateBlockStorageQuota(int volumes, int gigabytes) {
 		try {
-			BlockQuotaSet quota = projectClient.blockStorage().quotaSets()
-					.updateForTenant(projectId, Builders.blockQuotaSet().volumes(volumes).gigabytes(gigabytes).build());
+			BlockQuotaSet quota = projectClient.blockStorage().quotaSets().updateForTenant(projectId,
+					Builders.blockQuotaSet().volumes(volumes).gigabytes(gigabytes).build());
 			return quota;
 		} catch (Exception e) {
 			throw new CloudException("更新块存储配额发生错误。", e);
@@ -141,8 +141,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	public boolean modifyVolume(String volumeId, String volumeName, String volumeDescription) {
 		try {
 			// modification will return true as long as cinder-api is working
-			ActionResponse response = projectClient.blockStorage().volumes()
-					.update(volumeId, volumeName, volumeDescription);
+			ActionResponse response = projectClient.blockStorage().volumes().update(volumeId, volumeName,
+					volumeDescription);
 			if (false == response.isSuccess()) {
 				logger.error("修改卷信息失败：" + response.getFault());
 				return false;
@@ -526,8 +526,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	@Override
 	public Server renameServer(String serverId, String newName) {
 		try {
-			Server server = projectClient.compute().servers()
-					.update(serverId, ServerUpdateOptions.create().name(newName));
+			Server server = projectClient.compute().servers().update(serverId,
+					ServerUpdateOptions.create().name(newName));
 			return server;
 		} catch (Exception e) {
 			throw new CloudException("重命名虚拟机发生错误。", e);
@@ -586,8 +586,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 			// LiveMigrateOptions.create().host(host));
 
 			// mitaka use FQDN in live migration
-			ActionResponse response = projectClient.compute().servers()
-					.liveMigrate(serverId, LiveMigrateOptions.create().host(hypervisorName));
+			ActionResponse response = projectClient.compute().servers().liveMigrate(serverId,
+					LiveMigrateOptions.create().host(hypervisorName));
 			if (false == response.isSuccess()) {
 				logger.error("迁移虚拟机实例失败：" + response.getFault());
 				return false;
@@ -651,10 +651,10 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	 * @author xiangqian
 	 */
 	protected String getResourceId(String serverId, String meterName) {
-		List<String> serverResourceMeters = new ArrayList<String>(Arrays.asList("cpu_util", "memory.usage",
-				"disk.read.bytes.rate", "disk.write.bytes.rate"));
-		List<String> networkResourceMeters = new ArrayList<String>(Arrays.asList("network.outgoing.bytes.rate",
-				"network.incoming.bytes.rate"));
+		List<String> serverResourceMeters = new ArrayList<String>(
+				Arrays.asList("cpu_util", "memory.usage", "disk.read.bytes.rate", "disk.write.bytes.rate"));
+		List<String> networkResourceMeters = new ArrayList<String>(
+				Arrays.asList("network.outgoing.bytes.rate", "network.incoming.bytes.rate"));
 
 		// get resource id
 		String resourceId;
@@ -730,8 +730,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 		try {
 			SampleCriteria criteria = new SampleCriteria().resource(resourceId).timestamp(SampleCriteria.Oper.GT,
 					timestamp);
-			List<? extends MeterSample> meterSamples = projectClientM3.telemetry().meters()
-					.samples(meterName, criteria);
+			List<? extends MeterSample> meterSamples = projectClientM3.telemetry().meters().samples(meterName,
+					criteria);
 			/*
 			 * invert result order
 			 */

@@ -321,7 +321,7 @@ public interface CloudManipulator {
 	 * @author xiangqian
 	 */
 	public boolean waitServerDeleted(String serverId, int minute) throws InterruptedException;
-	
+
 	/**
 	 * get server by id.
 	 * 
