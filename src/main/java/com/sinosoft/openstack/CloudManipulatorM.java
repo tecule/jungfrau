@@ -730,7 +730,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 		try {
 			SampleCriteria criteria = new SampleCriteria().resource(resourceId).timestamp(SampleCriteria.Oper.GT,
 					timestamp);
-			List<? extends MeterSample> meterSamples = projectClientM3.telemetry().meters().samples(meterName,
+			List<? extends MeterSample> meterSamples = projectClient.telemetry().meters().samples(meterName,
 					criteria);
 			/*
 			 * invert result order
@@ -754,7 +754,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 		try {
 			List<String> floatingIpRange = new ArrayList<String>();
 
-			Network publicNetwork = projectClientM3.networking().network().get(PUBLIC_NETWORK_ID);
+			Network publicNetwork = projectClient.networking().network().get(PUBLIC_NETWORK_ID);
 			if (null == publicNetwork) {
 				logger.error("获取浮动IP地址范围出错，外部网络不存在。");
 				return floatingIpRange;
@@ -767,7 +767,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 			}
 
 			String subnetId = subnetIds.get(0);
-			Subnet subnet = projectClientM3.networking().subnet().get(subnetId);
+			Subnet subnet = projectClient.networking().subnet().get(subnetId);
 			if (null == subnet) {
 				logger.error("获取浮动IP地址范围出错，外部网络所属的子网不存在。");
 				return floatingIpRange;
@@ -867,7 +867,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	@Override
 	public List<? extends Port> getGatewayPorts() {
 		try {
-			List<? extends Port> gatewayPorts = projectClientM3.networking().port()
+			List<? extends Port> gatewayPorts = projectClient.networking().port()
 					.list(PortListOptions.create().networkId(PUBLIC_NETWORK_ID).deviceOwner("network:router_gateway"));
 			return gatewayPorts;
 		} catch (Exception e) {
@@ -878,7 +878,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	@Override
 	public List<? extends Port> getFloatingIpPorts() {
 		try {
-			List<? extends Port> floatingIpPorts = projectClientM3.networking().port()
+			List<? extends Port> floatingIpPorts = projectClient.networking().port()
 					.list(PortListOptions.create().networkId(PUBLIC_NETWORK_ID).deviceOwner("network:floatingip"));
 			return floatingIpPorts;
 		} catch (Exception e) {
@@ -889,7 +889,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	@Override
 	public List<? extends NetFloatingIP> getFloatingIps() {
 		try {
-			List<? extends NetFloatingIP> floatingIPs = projectClientM3.networking().floatingip().list();
+			List<? extends NetFloatingIP> floatingIPs = projectClient.networking().floatingip().list();
 			return floatingIPs;
 		} catch (Exception e) {
 			throw new CloudException("获取浮动IP列表发生错误。", e);
@@ -899,7 +899,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	@Override
 	public Port getPort(String portId) {
 		try {
-			Port port = projectClientM3.networking().port().get(portId);
+			Port port = projectClient.networking().port().get(portId);
 			return port;
 		} catch (Exception e) {
 			throw new CloudException("获取端口发生错误。", e);
@@ -909,7 +909,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 	@Override
 	public Router getRouter(String routerId) {
 		try {
-			Router router = projectClientM3.networking().router().get(routerId);
+			Router router = projectClient.networking().router().get(routerId);
 			return router;
 		} catch (Exception e) {
 			throw new CloudException("获取路由发生错误。", e);
@@ -942,7 +942,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 			fip.setTenantId(server.getTenantId());
 			fip.setFloatingNetworkId(PUBLIC_NETWORK_ID);
 
-			List<? extends Port> ports = projectClientM3.networking().port()
+			List<? extends Port> ports = projectClient.networking().port()
 					.list(PortListOptions.create().deviceId(serverId));
 			if (1 != ports.size()) {
 				success = false;
@@ -956,7 +956,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 			Port port = ports.get(0);
 			String portId = port.getId();
 			fip.setPortId(portId);
-			floatingIp = projectClientM3.networking().floatingip().create(fip);
+			floatingIp = projectClient.networking().floatingip().create(fip);
 
 			success = true;
 			message = floatingIp.getId();
@@ -980,7 +980,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 			for (NetFloatingIP floatingIp : floatingIps) {
 				String floatingIpAddress = floatingIp.getFloatingIpAddress();
 				if (true == ipAddress.equalsIgnoreCase(floatingIpAddress)) {
-					ActionResponse response = projectClientM3.networking().floatingip().delete(floatingIp.getId());
+					ActionResponse response = projectClient.networking().floatingip().delete(floatingIp.getId());
 					if (true == response.isSuccess()) {
 						success = true;
 						message = "";
