@@ -19,6 +19,7 @@ import org.openstack4j.model.identity.v2.User;
 import org.openstack4j.model.image.Image;
 import org.openstack4j.model.network.AttachInterfaceType;
 import org.openstack4j.model.network.IPVersionType;
+import org.openstack4j.model.network.NetQuota;
 import org.openstack4j.model.network.Network;
 import org.openstack4j.model.network.Router;
 import org.openstack4j.model.network.RouterInterface;
@@ -112,6 +113,24 @@ public class CloudManipulatorM2 extends CloudManipulatorM {
   }
 
   @Override
+  public void updateProjectInfo(String projectName, String projectDescription) {
+    try {
+      OSClientV2 client = OSFactory.builderV2().endpoint(OS_AUTH_URL)
+          .credentials(OS_USERNAME, OS_PASSWORD).tenantId(projectId).perspective(Facing.ADMIN)
+          .authenticate();
+
+      Tenant tenant = client.identity().tenants().get(projectId);
+      client.identity().tenants()
+          .update(tenant.toBuilder().name(projectName + "_" + projectId.substring(0, 8))
+              .description(projectDescription).build());
+
+      return;
+    } catch (AuthenticationException e) {
+      throw new CloudException("更新项目基本信息发生错误。", e);
+    }
+  }
+
+  @Override
   public QuotaSet updateComputeServiceQuota(int instanceQuota, int cpuQuota, int memoryQuota) {
     try {
       OSClientV2 client = OSFactory.builderV2().endpoint(OS_AUTH_URL)
@@ -124,6 +143,26 @@ public class CloudManipulatorM2 extends CloudManipulatorM {
       return quota;
     } catch (AuthenticationException e) {
       throw new CloudException("更新计算服务配额发生错误。", e);
+    }
+  }
+
+  @Override
+  public NetQuota updateNetworkingServiceQuota(int instanceQuota) {
+    try {
+      OSClientV2 client = OSFactory.builderV2().endpoint(OS_AUTH_URL)
+          .credentials(OS_USERNAME, OS_PASSWORD).tenantId(projectId).perspective(Facing.ADMIN)
+          .authenticate();
+
+      /*
+       * set default quota besides floatingIP and port, otherwise they'll be 0
+       */
+      NetQuota quota = client.networking().quotas().updateForTenant(projectId,
+          Builders.netQuota().floatingIP(instanceQuota).port(instanceQuota).securityGroup(10)
+              .securityGroupRule(100).network(10).router(10).subnet(10).build());
+
+      return quota;
+    } catch (AuthenticationException e) {
+      throw new CloudException("更新网络服务配额发生错误。", e);
     }
   }
 

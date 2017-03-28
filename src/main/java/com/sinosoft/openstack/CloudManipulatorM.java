@@ -204,7 +204,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
   @Override
   public boolean waitVolumeStatus(String volumeId, List<Volume.Status> statusList, int waitSeconds)
       throws InterruptedException {
-    int sleepSeconds = 10;
+    int sleepSeconds = 1;
     int sleepCount = waitSeconds / sleepSeconds;
     if (sleepCount <= 0) {
       sleepCount = 1;
@@ -212,8 +212,6 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 
     int loop = 0;
     while (loop < sleepCount) {
-      Thread.sleep(sleepSeconds * 1000);
-
       Volume volume = getVolume(volumeId);
       if (null == volume) {
         return false;
@@ -226,6 +224,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
           }
         }
       }
+      
+      Thread.sleep(sleepSeconds * 1000);
 
       loop++;
     }
@@ -235,7 +235,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 
   @Override
   public boolean waitVolumeDeleted(String volumeId, int waitSeconds) throws InterruptedException {
-    int sleepSeconds = 10;
+    int sleepSeconds = 1;
     int sleepCount = waitSeconds / sleepSeconds;
     if (sleepCount <= 0) {
       sleepCount = 1;
@@ -243,8 +243,6 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 
     int loop = 0;
     while (loop < sleepCount) {
-      Thread.sleep(sleepSeconds * 1000);
-
       Volume volume = getVolume(volumeId);
       if (null == volume) {
         return true;
@@ -252,6 +250,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 
       loop++;
     }
+
+    Thread.sleep(sleepSeconds * 1000);
 
     return false;
   }
@@ -279,7 +279,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
   @Override
   public boolean waitImageStatus(String imageId, org.openstack4j.model.image.Image.Status status,
       int waitSeconds) throws InterruptedException {
-    int sleepSeconds = 10;
+    int sleepSeconds = 1;
     int sleepCount = waitSeconds / sleepSeconds;
     if (sleepCount <= 0) {
       sleepCount = 1;
@@ -287,8 +287,6 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 
     int loop = 0;
     while (loop < sleepCount) {
-      Thread.sleep(sleepSeconds * 1000);
-
       Image image = getImage(imageId);
       if (null == image) {
         return false;
@@ -299,6 +297,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
           return true;
         }
       }
+
+      Thread.sleep(sleepSeconds * 1000);
 
       loop++;
     }
@@ -413,7 +413,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
   @Override
   public boolean waitServerStatus(String serverId, List<Server.Status> statusList, int waitSeconds)
       throws InterruptedException {
-    int sleepSeconds = 10;
+    int sleepSeconds = 1;
     int sleepCount = waitSeconds / sleepSeconds;
     if (sleepCount <= 0) {
       sleepCount = 1;
@@ -421,8 +421,6 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 
     int loop = 0;
     while (loop < sleepCount) {
-      Thread.sleep(sleepSeconds * 1000);
-
       Server server = getServer(serverId);
       if (null == server) {
         return false;
@@ -436,6 +434,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
         }
       }
 
+      Thread.sleep(sleepSeconds * 1000);
+
       loop++;
     }
 
@@ -444,7 +444,7 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 
   @Override
   public boolean waitServerDeleted(String serverId, int waitSeconds) throws InterruptedException {
-    int sleepSeconds = 10;
+    int sleepSeconds = 1;
     int sleepCount = waitSeconds / sleepSeconds;
     if (sleepCount <= 0) {
       sleepCount = 1;
@@ -452,8 +452,6 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 
     int loop = 0;
     while (loop < sleepCount) {
-      Thread.sleep(sleepSeconds * 1000);
-
       Server server = getServer(serverId);
       if (null == server) {
         return true;
@@ -461,6 +459,8 @@ public abstract class CloudManipulatorM implements CloudManipulator {
 
       loop++;
     }
+
+    Thread.sleep(sleepSeconds * 1000);
 
     return false;
   }

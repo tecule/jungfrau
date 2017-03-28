@@ -10,6 +10,7 @@ import org.openstack4j.model.compute.VNCConsole;
 import org.openstack4j.model.compute.ext.Hypervisor;
 import org.openstack4j.model.image.Image;
 import org.openstack4j.model.network.NetFloatingIP;
+import org.openstack4j.model.network.NetQuota;
 import org.openstack4j.model.network.Port;
 import org.openstack4j.model.network.Router;
 import org.openstack4j.model.storage.block.BlockLimits.Absolute;
@@ -41,6 +42,17 @@ public interface CloudManipulator {
       int cpuQuota, int memoryQuota);
 
   /**
+   * update project name and description.
+   * 
+   * @param projectName
+   *          - project name
+   * @param projectDescription
+   *          - project description
+   * @return
+   */
+  public void updateProjectInfo(String projectName, String projectDescription);
+
+  /**
    * update compute service quota of a project.
    * 
    * @param instanceQuota
@@ -53,6 +65,16 @@ public interface CloudManipulator {
    * @author xiangqian
    */
   public QuotaSet updateComputeServiceQuota(int instanceQuota, int cpuQuota, int memoryQuota);
+
+  /**
+   * update networking service quota of a project.
+   * 
+   * @param instanceQuota
+   *          - instance quota
+   * @return updated quota
+   * @author xiangqian
+   */
+  public NetQuota updateNetworkingServiceQuota(int instanceQuota);
 
   /**
    * get absolute limits used by a project.
@@ -144,14 +166,14 @@ public interface CloudManipulator {
    *          - volume id
    * @param statusList
    *          - list of wait status
-   * @param minute
+   * @param waitSeconds
    *          - wait time limit
    * @return true if volume status transfer to wait status during the given time, return false if
    *         otherwise
    * @throws InterruptedException
    */
   public boolean waitVolumeStatus(String volumeId,
-      List<org.openstack4j.model.storage.block.Volume.Status> statusList, int minute)
+      List<org.openstack4j.model.storage.block.Volume.Status> statusList, int waitSeconds)
       throws InterruptedException;
 
   /**
@@ -159,13 +181,13 @@ public interface CloudManipulator {
    * 
    * @param volumeId
    *          - volume id
-   * @param minute
+   * @param waitSeconds
    *          - wait time limit
    * @return true if volume is deleted during the given time, return false if otherwise
    * @throws InterruptedException
    * @author xiangqian
    */
-  public boolean waitVolumeDeleted(String volumeId, int minute) throws InterruptedException;
+  public boolean waitVolumeDeleted(String volumeId, int waitSeconds) throws InterruptedException;
 
   /**
    * get the public images in the cloud.
@@ -192,7 +214,7 @@ public interface CloudManipulator {
    *          - image id
    * @param status
    *          - wait status
-   * @param minute
+   * @param waitSeconds
    *          - wait time limit
    * @return true if image status transfer to wait status during the given time, return false if
    *         otherwise
@@ -200,7 +222,7 @@ public interface CloudManipulator {
    * @author xiangqian
    */
   public boolean waitImageStatus(String imageId, org.openstack4j.model.image.Image.Status status,
-      int minute) throws InterruptedException;
+      int waitSeconds) throws InterruptedException;
 
   // /**
   // * wait image until it's been deleted in the given time.
@@ -305,13 +327,13 @@ public interface CloudManipulator {
    *          - server id
    * @param statusList
    *          - list of wait status
-   * @param minute
+   * @param waitSeconds
    *          - wait time limit
    * @return true if volume status transfer to wait status during the given time, return false if
    *         otherwise
    * @throws InterruptedException
    */
-  public boolean waitServerStatus(String serverId, List<Status> statusList, int minute)
+  public boolean waitServerStatus(String serverId, List<Status> statusList, int waitSeconds)
       throws InterruptedException;
 
   /**
@@ -319,13 +341,13 @@ public interface CloudManipulator {
    * 
    * @param serverId
    *          - server id
-   * @param minute
+   * @param waitSeconds
    *          - wait time limit
    * @return true if server is deleted during the given time, return false if otherwise
    * @throws InterruptedException
    * @author xiangqian
    */
-  public boolean waitServerDeleted(String serverId, int minute) throws InterruptedException;
+  public boolean waitServerDeleted(String serverId, int waitSeconds) throws InterruptedException;
 
   /**
    * get server by id.

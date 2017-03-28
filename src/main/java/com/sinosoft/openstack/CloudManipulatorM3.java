@@ -5,20 +5,24 @@ import java.util.List;
 import java.util.UUID;
 
 import org.openstack4j.api.Builders;
+import org.openstack4j.api.OSClient.OSClientV2;
 import org.openstack4j.api.OSClient.OSClientV3;
 import org.openstack4j.api.exceptions.AuthenticationException;
+import org.openstack4j.api.types.Facing;
 import org.openstack4j.model.common.ActionResponse;
 import org.openstack4j.model.common.Identifier;
 import org.openstack4j.model.compute.IPProtocol;
 import org.openstack4j.model.compute.QuotaSet;
 import org.openstack4j.model.compute.SecGroupExtension;
 import org.openstack4j.model.compute.Server;
+import org.openstack4j.model.identity.v2.Tenant;
 import org.openstack4j.model.identity.v3.Project;
 import org.openstack4j.model.identity.v3.Role;
 import org.openstack4j.model.identity.v3.User;
 import org.openstack4j.model.image.Image;
 import org.openstack4j.model.network.AttachInterfaceType;
 import org.openstack4j.model.network.IPVersionType;
+import org.openstack4j.model.network.NetQuota;
 import org.openstack4j.model.network.Network;
 import org.openstack4j.model.network.Router;
 import org.openstack4j.model.network.RouterInterface;
@@ -147,6 +151,25 @@ public class CloudManipulatorM3 extends CloudManipulatorM {
   }
 
   @Override
+  public void updateProjectInfo(String projectName, String projectDescription) {
+    try {
+      OSClientV3 domainClient = OSFactory.builderV3().endpoint(OS_AUTH_URL)
+          .credentials(OS_USER_ID, OS_PASSWORD).scopeToDomain(Identifier.byId(OS_USER_DOMAIN_ID))
+          .authenticate();
+
+      Project project = domainClient.identity().projects().get(projectId);
+
+      domainClient.identity().projects()
+          .update(project.toBuilder().name(projectName + "_" + projectId.substring(0, 8))
+              .description(projectDescription).build());
+
+      return;
+    } catch (AuthenticationException e) {
+      throw new CloudException("更新项目基本信息发生错误。", e);
+    }
+  }
+
+  @Override
   public QuotaSet updateComputeServiceQuota(int instanceQuota, int cpuQuota, int memoryQuota) {
     try {
       QuotaSet quota = projectClientM3.compute().quotaSets().updateForTenant(projectId, Builders
@@ -155,6 +178,22 @@ public class CloudManipulatorM3 extends CloudManipulatorM {
       return quota;
     } catch (Exception e) {
       throw new CloudException("更新计算服务配额发生错误。", e);
+    }
+  }
+
+  @Override
+  public NetQuota updateNetworkingServiceQuota(int instanceQuota) {
+    try {
+      /*
+       * set default quota besides floatingIP and port, otherwise they'll be 0
+       */
+      NetQuota quota = projectClientM3.networking().quotas().updateForTenant(projectId,
+          Builders.netQuota().floatingIP(instanceQuota).port(instanceQuota).securityGroup(10)
+              .securityGroupRule(100).network(10).router(10).subnet(10).build());
+
+      return quota;
+    } catch (AuthenticationException e) {
+      throw new CloudException("更新网络服务配额发生错误。", e);
     }
   }
 
